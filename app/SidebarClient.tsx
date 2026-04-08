@@ -3,14 +3,31 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/dashboard/clients", label: "Clients", icon: "👥" },
-  { href: "/dashboard/risks", label: "Risques", icon: "⚠️" },
-  { href: "/dashboard/compliance", label: "Conformité", icon: "✅" },
-  { href: "/dashboard/reports", label: "Rapports", icon: "📄" },
-  { href: "/dashboard/admin", label: "Administration", icon: "🛡️" },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: string;
+  roles: string[];
+};
+
+const navItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "analyst", "compliance", "user"] },
+  { href: "/dashboard/clients", label: "Clients", icon: "👥", roles: ["admin", "analyst", "user"] },
+  { href: "/dashboard/risks", label: "Risques", icon: "⚠️", roles: ["admin", "analyst"] },
+  { href: "/dashboard/compliance", label: "Conformité", icon: "✅", roles: ["admin", "compliance"] },
+  { href: "/dashboard/alerts", label: "Alertes", icon: "🔔", roles: ["admin", "analyst", "user"] },
+  { href: "/dashboard/reports", label: "Rapports", icon: "📄", roles: ["admin", "analyst"] },
+  { href: "/dashboard/profile", label: "Mon Profil", icon: "👤", roles: ["admin", "analyst", "compliance", "user"] },
+  { href: "/dashboard/admin", label: "Administration", icon: "🛡️", roles: ["admin"] },
 ];
+
+
+const ROLE_LABELS: Record<string, { label: string; badge: string }> = {
+  admin: { label: "Administrateur", badge: "badge-purple" },
+  analyst: { label: "Analyste", badge: "badge-blue" },
+  compliance: { label: "Conformité", badge: "badge-green" },
+  user: { label: "Utilisateur", badge: "badge-yellow" },
+};
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -38,6 +55,9 @@ export default function Sidebar() {
     if (href === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(href);
   };
+
+  const visibleItems = navItems.filter(item => item.roles.includes(userRole));
+  const roleInfo = ROLE_LABELS[userRole] ?? ROLE_LABELS["user"];
 
   return (
     <aside style={{
@@ -98,7 +118,7 @@ export default function Sidebar() {
             NAVIGATION
           </div>
         )}
-        {navItems.map(item => {
+        {visibleItems.map(item => {
           const active = isActive(item.href);
           return (
             <a key={item.href} href={item.href} style={{
@@ -156,8 +176,8 @@ export default function Sidebar() {
                 <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {userEmail}
                 </div>
-                <span className={`badge ${userRole === "admin" ? "badge-purple" : "badge-blue"}`} style={{ fontSize: "10px" }}>
-                  {userRole === "admin" ? "Administrateur" : "Utilisateur"}
+                <span className={`badge ${roleInfo.badge}`} style={{ fontSize: "10px" }}>
+                  {roleInfo.label}
                 </span>
               </div>
             </div>

@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import * as XLSX from "xlsx";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -12,13 +13,25 @@ export default function ClientsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const [userRole, setUserRole] = useState("user");
+  const [importStatus, setImportStatus] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
   const [capital, setCapital] = useState("");
   const [debt, setDebt] = useState("");
   const [liquidity, setLiquidity] = useState("");
 
-  useEffect(() => { fetchClients(); }, []);
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles").select("role").eq("id", data.session.user.id).single();
+        if (profile?.role) setUserRole(profile.role);
+      }
+    });
+    fetchClients();
+  }, []);
 
   useEffect(() => {
     let list = clients;
@@ -65,6 +78,54 @@ export default function ClientsPage() {
     if (!error) setClients(prev => prev.filter(c => c.id !== id));
   };
 
+  // Excel Import
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportStatus("Lecture du fichier…");
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target?.result;
+        const wb = XLSX.read(data, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(ws);
+        if (rows.length === 0) { setImportStatus("❌ Fichier vide ou colonnes incorrectes."); return; }
+
+        const toInsert = rows.map(row => {
+          const cap = Number(row["Capital"] ?? row["capital"] ?? 0);
+          const dbt = Number(row["Dette"] ?? row["dette"] ?? 0);
+          const liq = Number(row["Liquidite"] ?? row["Liquidité"] ?? row["liquidite"] ?? 0);
+          const nm = String(row["Nom"] ?? row["nom"] ?? "Inconnu");
+          const { score, level } = calculateRisk(cap, dbt, liq);
+          return { name: nm, capital: cap, debt: dbt, liquidity: liq, riskScore: score, riskLevel: level };
+        });
+
+        const { data: inserted, error } = await supabase.from("clients").insert(toInsert).select();
+        if (error) { setImportStatus(`❌ Erreur : ${error.message}`); return; }
+        setImportStatus(`✅ ${inserted.length} client(s) importé(s) avec succès !`);
+        setClients(prev => [...(inserted ?? []), ...prev]);
+        setTimeout(() => setImportStatus(""), 4000);
+      } catch {
+        setImportStatus("❌ Erreur lors de la lecture du fichier Excel.");
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // CSV Export
+  const exportCSV = () => {
+    const headers = ["Nom", "Capital (TND)", "Dette (TND)", "Liquidité (TND)", "Score de Risque (%)", "Niveau de Risque"];
+    const rows = clients.map(c => [c.name, c.capital, c.debt, c.liquidity, c.riskScore, c.riskLevel]);
+    const csv = [headers, ...rows].map(r => r.join(";")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `finovance_clients_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   const levels = ["Tous", "Faible", "Moyen", "Élevé"];
 
   return (
@@ -74,14 +135,59 @@ export default function ClientsPage() {
           <h1 className="section-title">Clients</h1>
           <p className="section-subtitle">Gestion et analyse des profils clients</p>
         </div>
-        <button onClick={() => { setShowModal(true); setFormError(""); setFormSuccess(""); }} className="btn btn-primary">
-          + Nouveau Client
-        </button>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          {/* CSV Export — visible for all */}
+          <button onClick={exportCSV} style={{
+            padding: "10px 18px", borderRadius: "10px", border: "1px solid var(--border)",
+            background: "var(--bg-card)", color: "var(--text-secondary)",
+            fontWeight: 600, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px"
+          }}>
+            💾 Exporter CSV
+          </button>
+          {/* Excel Import — admin only */}
+          {userRole === "admin" && (
+            <>
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleExcelImport} />
+              <button onClick={() => fileInputRef.current?.click()} style={{
+                padding: "10px 18px", borderRadius: "10px", border: "1px solid rgba(16,185,129,0.4)",
+                background: "rgba(16,185,129,0.1)", color: "#34d399",
+                fontWeight: 600, fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px"
+              }}>
+                📥 Importer Excel
+              </button>
+            </>
+          )}
+          <button onClick={() => { setShowModal(true); setFormError(""); setFormSuccess(""); }} className="btn btn-primary">
+            + Nouveau Client
+          </button>
+        </div>
       </div>
+
+      {/* Import status */}
+      {importStatus && (
+        <div style={{
+          marginBottom: "16px", padding: "12px 16px", borderRadius: "10px", fontSize: "13px", fontWeight: 600,
+          background: importStatus.startsWith("✅") ? "rgba(16,185,129,0.1)" : importStatus.startsWith("❌") ? "rgba(239,68,68,0.1)" : "rgba(59,130,246,0.1)",
+          border: importStatus.startsWith("✅") ? "1px solid rgba(16,185,129,0.3)" : importStatus.startsWith("❌") ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(59,130,246,0.3)",
+          color: importStatus.startsWith("✅") ? "#34d399" : importStatus.startsWith("❌") ? "#f87171" : "#60a5fa"
+        }}>
+          {importStatus}
+        </div>
+      )}
+
+      {/* Excel format hint for admin */}
+      {userRole === "admin" && (
+        <div style={{
+          marginBottom: "16px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px",
+          background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", color: "var(--text-muted)"
+        }}>
+          💡 <strong>Format d'import Excel :</strong> Colonnes requises → <code>Nom</code> | <code>Capital</code> | <code>Dette</code> | <code>Liquidite</code>
+        </div>
+      )}
 
       {/* Filters */}
       <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
-        <input className="input" style={{ maxWidth: "280px" }} placeholder="🔍 Rechercher un client..."
+        <input className="input" style={{ maxWidth: "280px" }} placeholder="🔍 Rechercher un client…"
           value={search} onChange={e => setSearch(e.target.value)} />
         <div style={{ display: "flex", gap: "8px" }}>
           {levels.map(lvl => (
@@ -112,7 +218,7 @@ export default function ClientsPage() {
               <th>Liquidité</th>
               <th>Score de Risque</th>
               <th>Niveau</th>
-              <th>Actions</th>
+              {userRole === "admin" && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -123,9 +229,9 @@ export default function ClientsPage() {
             ) : filtered.map(c => (
               <tr key={c.id}>
                 <td style={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.name}</td>
-                <td>{Number(c.capital).toLocaleString("fr-FR")} €</td>
-                <td>{Number(c.debt).toLocaleString("fr-FR")} €</td>
-                <td>{Number(c.liquidity).toLocaleString("fr-FR")} €</td>
+                <td>{Number(c.capital).toLocaleString("fr-FR")} TND</td>
+                <td>{Number(c.debt).toLocaleString("fr-FR")} TND</td>
+                <td>{Number(c.liquidity).toLocaleString("fr-FR")} TND</td>
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div style={{ width: "80px", height: "6px", background: "var(--border)", borderRadius: "3px", overflow: "hidden" }}>
@@ -142,11 +248,13 @@ export default function ClientsPage() {
                     {c.riskLevel}
                   </span>
                 </td>
-                <td>
-                  <button onClick={() => deleteClient(c.id, c.name)} className="btn btn-danger" style={{ padding: "6px 12px", fontSize: "12px" }}>
-                    🗑️ Supprimer
-                  </button>
-                </td>
+                {userRole === "admin" && (
+                  <td>
+                    <button onClick={() => deleteClient(c.id, c.name)} className="btn btn-danger" style={{ padding: "6px 12px", fontSize: "12px" }}>
+                      🗑️ Supprimer
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -175,9 +283,9 @@ export default function ClientsPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {[
                 { label: "Nom du client", val: name, set: setName, type: "text", placeholder: "Ex: Entreprise ABC" },
-                { label: "Capital (€)", val: capital, set: setCapital, type: "number", placeholder: "Ex: 150000" },
-                { label: "Dette (€)", val: debt, set: setDebt, type: "number", placeholder: "Ex: 30000" },
-                { label: "Liquidité (€)", val: liquidity, set: setLiquidity, type: "number", placeholder: "Ex: 25000" },
+                { label: "Capital (TND)", val: capital, set: setCapital, type: "number", placeholder: "Ex: 150000" },
+                { label: "Dette (TND)", val: debt, set: setDebt, type: "number", placeholder: "Ex: 30000" },
+                { label: "Liquidité (TND)", val: liquidity, set: setLiquidity, type: "number", placeholder: "Ex: 25000" },
               ].map(f => (
                 <div key={f.label}>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "6px" }}>

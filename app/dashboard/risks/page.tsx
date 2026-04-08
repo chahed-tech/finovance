@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -15,13 +16,38 @@ const CustomTooltipStyle = {
 export default function RisksPage() {
     const [clients, setClients] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
-        supabase.from("clients").select("*").order("riskScore", { ascending: true }).then(({ data }) => {
-            setClients(data ?? []);
-            setLoading(false);
+        supabase.auth.getSession().then(async ({ data }) => {
+            if (!data.session?.user) { router.replace("/"); return; }
+            const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.session.user.id).single();
+            const role = profile?.role ?? "user";
+            setUserRole(role);
+            if (["admin", "analyst"].includes(role)) {
+                supabase.from("clients").select("*").order("riskScore", { ascending: true }).then(({ data }) => {
+                    setClients(data ?? []);
+                    setLoading(false);
+                });
+            } else {
+                setLoading(false);
+            }
         });
     }, []);
+
+    if (userRole !== null && !["admin", "analyst"].includes(userRole)) {
+        return (
+            <div className="animate-fade-in" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+                <div className="card" style={{ textAlign: "center", padding: "48px", maxWidth: "400px" }}>
+                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
+                    <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "8px" }}>Accès refusé</div>
+                    <div style={{ color: "var(--text-muted)" }}>Vous n'avez pas les droits nécessaires pour accéder à cette section.</div>
+                    <a href="/dashboard" className="btn btn-primary" style={{ marginTop: "24px", display: "inline-flex" }}>← Retour au Dashboard</a>
+                </div>
+            </div>
+        );
+    }
 
     const high = clients.filter(c => c.riskLevel === "Élevé");
     const med = clients.filter(c => c.riskLevel === "Moyen");
@@ -156,7 +182,7 @@ export default function RisksPage() {
                                 }}>
                                     <div>
                                         <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.name}</div>
-                                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Capital : {Number(c.capital).toLocaleString("fr-FR")} €</div>
+                                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Capital : {Number(c.capital).toLocaleString("fr-FR")} TND</div>
                                     </div>
                                     <span className="badge badge-red">{c.riskScore}%</span>
                                 </div>

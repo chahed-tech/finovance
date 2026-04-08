@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 type ComplianceItem = {
     id: number;
@@ -35,6 +37,29 @@ export default function CompliancePage() {
     const [items, setItems] = useState<ComplianceItem[]>(initialItems);
     const [filter, setFilter] = useState("Tous");
     const [statusFilter, setStatusFilter] = useState("Tous");
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const router = useRouter();
+
+    useEffect(() => {
+        supabase.auth.getSession().then(async ({ data }) => {
+            if (!data.session?.user) { router.replace("/"); return; }
+            const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.session.user.id).single();
+            setUserRole(profile?.role ?? "user");
+        });
+    }, []);
+
+    if (userRole !== null && !["admin", "compliance"].includes(userRole)) {
+        return (
+            <div className="animate-fade-in" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+                <div className="card" style={{ textAlign: "center", padding: "48px", maxWidth: "400px" }}>
+                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
+                    <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "8px" }}>Accès refusé</div>
+                    <div style={{ color: "var(--text-muted)" }}>Vous n'avez pas les droits nécessaires pour accéder à cette section.</div>
+                    <a href="/dashboard" className="btn btn-primary" style={{ marginTop: "24px", display: "inline-flex" }}>← Retour au Dashboard</a>
+                </div>
+            </div>
+        );
+    }
 
     const filtered = items
         .filter(i => filter === "Tous" || i.category === filter)

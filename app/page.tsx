@@ -23,16 +23,37 @@ export default function AuthPage() {
     if (!email || !password) { setError("Email et mot de passe requis."); return; }
     setLoading(true);
     if (isRegister) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) setError(error.message);
-      else setSuccess("Compte créé ! Vérifiez votre email pour confirmer.");
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+      } else if (data.user) {
+        // Insert the profile row immediately after signup
+        await supabase.from("profiles").upsert({
+          id: data.user.id,
+          email: data.user.email,
+          role: "user",
+        });
+        setSuccess("Compte créé avec succès ! Vous pouvez maintenant vous connecter.");
+        setIsRegister(false);
+      }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(error.message);
-      else router.push("/dashboard");
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message);
+      } else if (data.user) {
+        // Ensure profile exists on every login
+        await supabase.from("profiles").upsert({
+          id: data.user.id,
+          email: data.user.email,
+          role: "user",
+        }, { onConflict: "id", ignoreDuplicates: true });
+        router.push("/dashboard");
+      }
     }
     setLoading(false);
   };
+
+
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleAuth();

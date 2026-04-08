@@ -35,6 +35,10 @@ export default function Dashboard() {
   const medRisk = clients.filter(c => c.riskLevel === "Moyen").length;
   const lowRisk = clients.filter(c => c.riskLevel === "Faible").length;
   const avgScore = clients.length ? Math.round(clients.reduce((a, b) => a + b.riskScore, 0) / clients.length) : 0;
+  const totalPortfolio = clients.reduce((a, b) => a + (Number(b.capital) || 0), 0);
+  const avgDebtRatio = clients.length
+    ? Math.round(clients.reduce((a, b) => a + (b.capital > 0 ? (b.debt / b.capital) * 100 : 0), 0) / clients.length)
+    : 0;
 
   const pieData = [
     { name: "Élevé", value: highRisk },
@@ -48,7 +52,9 @@ export default function Dashboard() {
     { label: "Total Clients", value: clients.length, icon: "👥", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
     { label: "Haut Risque", value: highRisk, icon: "🔴", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
     { label: "Score Moyen", value: `${avgScore}%`, icon: "📈", color: "#10b981", bg: "rgba(16,185,129,0.12)" },
-    { label: "Alertes Actives", value: highRisk * 2, icon: "🔔", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
+    { label: "Alertes Actives", value: highRisk, icon: "🔔", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
+    { label: "Portefeuille Total", value: totalPortfolio > 0 ? `${(totalPortfolio / 1000).toFixed(0)}K TND` : "0 TND", icon: "💰", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
+    { label: "Ratio Dette/Capital", value: `${avgDebtRatio}%`, icon: "⚖️", color: "#06b6d4", bg: "rgba(6,182,212,0.12)" },
   ];
 
   return (
@@ -60,7 +66,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "28px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "28px" }}>
         {stats.map((s, i) => (
           <div key={i} className="stat-card" style={{ animationDelay: `${i * 0.08}s` }}>
             <div className="stat-icon" style={{ background: s.bg }}>
@@ -198,9 +204,9 @@ export default function Dashboard() {
               ) : clients.slice(0, 5).map(c => (
                 <tr key={c.id}>
                   <td style={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.name}</td>
-                  <td>{c.capital?.toLocaleString("fr-FR")} €</td>
-                  <td>{c.debt?.toLocaleString("fr-FR")} €</td>
-                  <td>{c.liquidity?.toLocaleString("fr-FR")} €</td>
+                  <td>{c.capital?.toLocaleString("fr-FR")} TND</td>
+                  <td>{c.debt?.toLocaleString("fr-FR")} TND</td>
+                  <td>{c.liquidity?.toLocaleString("fr-FR")} TND</td>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <div style={{

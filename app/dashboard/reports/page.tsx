@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -38,10 +39,33 @@ const reports: ReportType[] = [
 export default function ReportsPage() {
     const [clients, setClients] = useState<any[]>([]);
     const [generating, setGenerating] = useState<number | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
-        supabase.from("clients").select("*").then(({ data }) => setClients(data ?? []));
+        supabase.auth.getSession().then(async ({ data }) => {
+            if (!data.session?.user) { router.replace("/"); return; }
+            const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.session.user.id).single();
+            const role = profile?.role ?? "user";
+            setUserRole(role);
+            if (["admin", "analyst"].includes(role)) {
+                supabase.from("clients").select("*").then(({ data }) => setClients(data ?? []));
+            }
+        });
     }, []);
+
+    if (userRole !== null && !["admin", "analyst"].includes(userRole)) {
+        return (
+            <div className="animate-fade-in" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+                <div className="card" style={{ textAlign: "center", padding: "48px", maxWidth: "400px" }}>
+                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
+                    <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "8px" }}>Accès refusé</div>
+                    <div style={{ color: "var(--text-muted)" }}>Vous n'avez pas les droits nécessaires pour accéder à cette section.</div>
+                    <a href="/dashboard" className="btn btn-primary" style={{ marginTop: "24px", display: "inline-flex" }}>← Retour au Dashboard</a>
+                </div>
+            </div>
+        );
+    }
 
     const high = clients.filter(c => c.riskLevel === "Élevé").length;
     const med = clients.filter(c => c.riskLevel === "Moyen").length;
@@ -73,7 +97,7 @@ export default function ReportsPage() {
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px", marginBottom: "24px" }}>
                 <div className="card">
                     <div style={{ fontWeight: 700, marginBottom: "4px" }}>Évolution du Portefeuille</div>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "20px" }}>Valeur totale gérée (€)</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "20px" }}>Valeur totale gérée (TND)</div>
                     <ResponsiveContainer width="100%" height={200}>
                         <AreaChart data={areaData}>
                             <defs>
@@ -86,7 +110,7 @@ export default function ReportsPage() {
                             <XAxis dataKey="mois" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false}
                                 tickFormatter={v => `${(v / 1000000).toFixed(1)}M`} />
-                            <Tooltip contentStyle={CustomTooltipStyle} formatter={(v: any) => [`${Number(v).toLocaleString("fr-FR")} €`, "Portefeuille"]} />
+                            <Tooltip contentStyle={CustomTooltipStyle} formatter={(v: any) => [`${Number(v).toLocaleString("fr-FR")} TND`, "Portefeuille"]} />
                             <Area type="monotone" dataKey="valeur" stroke="#3b82f6" fill="url(#areaGrad)" strokeWidth={2.5} />
                         </AreaChart>
                     </ResponsiveContainer>
