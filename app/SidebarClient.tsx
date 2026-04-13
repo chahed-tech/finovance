@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/compliance", label: "Conformité", icon: "✅", roles: ["admin", "compliance"] },
   { href: "/dashboard/alerts", label: "Alertes", icon: "🔔", roles: ["admin", "analyst", "user"] },
   { href: "/dashboard/reports", label: "Rapports", icon: "📄", roles: ["admin", "analyst"] },
+  { href: "/dashboard/ratios", label: "Bilan & Ratios", icon: "⚖️", roles: ["admin", "analyst", "user", "compliance"] },
   { href: "/dashboard/profile", label: "Mon Profil", icon: "👤", roles: ["admin", "analyst", "compliance", "user"] },
   { href: "/dashboard/admin", label: "Administration", icon: "🛡️", roles: ["admin"] },
 ];

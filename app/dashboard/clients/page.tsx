@@ -250,9 +250,14 @@ export default function ClientsPage() {
                 </td>
                 {userRole === "admin" && (
                   <td>
-                    <button onClick={() => deleteClient(c.id, c.name)} className="btn btn-danger" style={{ padding: "6px 12px", fontSize: "12px" }}>
-                      🗑️ Supprimer
-                    </button>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <a href={`/dashboard/ratios?clientId=${c.id}`} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: "12px", textDecoration: "none" }}>
+                        ⚖️ Bilan
+                      </a>
+                      <button onClick={() => deleteClient(c.id, c.name)} className="btn btn-danger" style={{ padding: "6px 12px", fontSize: "12px" }}>
+                        🗑️ Suppr.
+                      </button>
+                    </div>
                   </td>
                 )}
               </tr>
