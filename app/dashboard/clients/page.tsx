@@ -129,7 +129,7 @@ export default function ClientsPage() {
   const levels = ["Tous", "Faible", "Moyen", "Élevé"];
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <div style={{ marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <h1 className="section-title">Clients</h1>

@@ -13,25 +13,25 @@ function RatiosContent() {
     const [loading, setLoading] = useState(true);
 
     // Valeurs du Bilan
-    const [actifImmob, setActifImmob] = useState(0);
-    const [stocks, setStocks] = useState(0);
-    const [creancesClients, setCreancesClients] = useState(0);
-    const [autresActifsCirc, setAutresActifsCirc] = useState(0);
-    const [tresorerieActif, setTresorerieActif] = useState(0);
+    const [actifImmob, setActifImmob] = useState<string | number>("");
+    const [stocks, setStocks] = useState<string | number>("");
+    const [creancesClients, setCreancesClients] = useState<string | number>("");
+    const [autresActifsCirc, setAutresActifsCirc] = useState<string | number>("");
+    const [tresorerieActif, setTresorerieActif] = useState<string | number>("");
 
-    const [capitauxPropres, setCapitauxPropres] = useState(0);
-    const [amortissements, setAmortissements] = useState(0);
-    const [provRisques, setProvRisques] = useState(0);
-    const [dettesFinancieres, setDettesFinancieres] = useState(0); // Emprunts
-    const [dettesFournisseurs, setDettesFournisseurs] = useState(0);
-    const [autresPassifsCourants, setAutresPassifsCourants] = useState(0);
-    const [tresoreriePassif, setTresoreriePassif] = useState(0);
+    const [capitauxPropres, setCapitauxPropres] = useState<string | number>("");
+    const [amortissements, setAmortissements] = useState<string | number>("");
+    const [provRisques, setProvRisques] = useState<string | number>("");
+    const [dettesFinancieres, setDettesFinancieres] = useState<string | number>(""); // Emprunts
+    const [dettesFournisseurs, setDettesFournisseurs] = useState<string | number>("");
+    const [autresPassifsCourants, setAutresPassifsCourants] = useState<string | number>("");
+    const [tresoreriePassif, setTresoreriePassif] = useState<string | number>("");
 
     // Valeurs de Gestion (Compte de Résultat)
-    const [ca, setCa] = useState(0);
-    const [achats, setAchats] = useState(0);
-    const [resultatNet, setResultatNet] = useState(0);
-    const [caf, setCaf] = useState(0);
+    const [ca, setCa] = useState<string | number>("");
+    const [achats, setAchats] = useState<string | number>("");
+    const [resultatNet, setResultatNet] = useState<string | number>("");
+    const [caf, setCaf] = useState<string | number>("");
 
     useEffect(() => {
         fetchClients();
@@ -43,64 +43,79 @@ function RatiosContent() {
         setLoading(false);
     };
 
-    // Calculs intermédiaires
-    const totalActifCourant = stocks + creancesClients + autresActifsCirc + tresorerieActif;
-    const totalActif = actifImmob + totalActifCourant;
+    // Cast as numbers
+    const nActifImmob = Number(actifImmob) || 0;
+    const nStocks = Number(stocks) || 0;
+    const nCreancesClients = Number(creancesClients) || 0;
+    const nAutresActifsCirc = Number(autresActifsCirc) || 0;
+    const nTresorerieActif = Number(tresorerieActif) || 0;
 
-    const totalPassifCourant = dettesFournisseurs + autresPassifsCourants + tresoreriePassif;
-    const ressourcesStables = capitauxPropres + amortissements + provRisques + dettesFinancieres;
+    const nCapitauxPropres = Number(capitauxPropres) || 0;
+    const nAmortissements = Number(amortissements) || 0;
+    const nProvRisques = Number(provRisques) || 0;
+    const nDettesFinancieres = Number(dettesFinancieres) || 0;
+    const nDettesFournisseurs = Number(dettesFournisseurs) || 0;
+    const nAutresPassifsCourants = Number(autresPassifsCourants) || 0;
+    const nTresoreriePassif = Number(tresoreriePassif) || 0;
+
+    const nCa = Number(ca) || 0;
+    const nAchats = Number(achats) || 0;
+    const nResultatNet = Number(resultatNet) || 0;
+    const nCaf = Number(caf) || 0;
+
+    // Calculs intermédiaires
+    const totalActifCourant = nStocks + nCreancesClients + nAutresActifsCirc + nTresorerieActif;
+    const totalActif = nActifImmob + totalActifCourant;
+
+    const totalPassifCourant = nDettesFournisseurs + nAutresPassifsCourants + nTresoreriePassif;
+    const ressourcesStables = nCapitauxPropres + nAmortissements + nProvRisques + nDettesFinancieres;
     const totalPassif = ressourcesStables + totalPassifCourant;
 
-    const totalDettes = dettesFinancieres + dettesFournisseurs + autresPassifsCourants + tresoreriePassif;
+    const totalDettes = nDettesFinancieres + nDettesFournisseurs + nAutresPassifsCourants + nTresoreriePassif;
 
     // Ratios calculés
     const liquiditeGenerale = totalPassifCourant > 0 ? totalActifCourant / totalPassifCourant : 0;
-    const liquiditeReduite = totalPassifCourant > 0 ? (totalActifCourant - stocks) / totalPassifCourant : 0;
-    const liquiditeImmediate = totalPassifCourant > 0 ? tresorerieActif / totalPassifCourant : 0;
+    const liquiditeReduite = totalPassifCourant > 0 ? (totalActifCourant - nStocks) / totalPassifCourant : 0;
+    const liquiditeImmediate = totalPassifCourant > 0 ? nTresorerieActif / totalPassifCourant : 0;
 
     const endettement = totalActif > 0 ? totalDettes / totalActif : 0;
-    const autonomieFinanciere = totalBilan() > 0 ? capitauxPropres / totalBilan() : 0;
-    const leverageFinancier = capitauxPropres > 0 ? totalDettes / capitauxPropres : 0;
-    const capaciteRemboursement = caf > 0 ? dettesFinancieres / caf : 0;
+    const autonomieFinanciere = totalActif > 0 ? nCapitauxPropres / totalActif : 0;
+    const leverageFinancier = nCapitauxPropres > 0 ? totalDettes / nCapitauxPropres : 0;
+    const capaciteRemboursement = nCaf > 0 ? nDettesFinancieres / nCaf : 0;
 
-    const roa = totalActif > 0 ? resultatNet / totalActif : 0;
-    const roe = capitauxPropres > 0 ? resultatNet / capitauxPropres : 0;
-    const margeNette = ca > 0 ? resultatNet / ca : 0;
+    const roa = totalActif > 0 ? nResultatNet / totalActif : 0;
+    const roe = nCapitauxPropres > 0 ? nResultatNet / nCapitauxPropres : 0;
+    const margeNette = nCa > 0 ? nResultatNet / nCa : 0;
 
-    const fondsDeRoulement = ressourcesStables - actifImmob;
-    const besoinFondsDeRoulement = (stocks + creancesClients + autresActifsCirc) - (dettesFournisseurs + autresPassifsCourants);
+    const fondsDeRoulement = ressourcesStables - nActifImmob;
+    const besoinFondsDeRoulement = (nStocks + nCreancesClients + nAutresActifsCirc) - (nDettesFournisseurs + nAutresPassifsCourants);
     const tresorerieNette = fondsDeRoulement - besoinFondsDeRoulement;
 
     // Ratios de Gestion
-    const delaiMoyenStockage = ca > 0 && stocks > 0 ? (stocks / achats) * 360 : 0; // approximatif basé sur les achats/coût des ventes
-    const delaiMoyenRecouvrement = ca > 0 ? (creancesClients / ca) * 360 : 0;
-    const delaiMoyenPaiementV = achats > 0 ? (dettesFournisseurs / achats) * 360 : 0;
-
-    function totalBilan() {
-        // Total Actif = Total Passif si équilibré, mais on prend Actif pour calculer les ratios
-        return totalActif;
-    }
+    const delaiMoyenStockage = nCa > 0 && nStocks > 0 ? (nStocks / nAchats) * 360 : 0;
+    const delaiMoyenRecouvrement = nCa > 0 ? (nCreancesClients / nCa) * 360 : 0;
+    const delaiMoyenPaiementV = nAchats > 0 ? (nDettesFournisseurs / nAchats) * 360 : 0;
 
     const exportExcel = () => {
         const wb = XLSX.utils.book_new();
 
         const bilanData = [
             ["Poste Actif", "Montant", "Poste Passif", "Montant"],
-            ["Actif Immobilisé Brut", actifImmob, "Capitaux Propres", capitauxPropres],
-            ["Stocks", stocks, "Amortissements & Provisions", amortissements],
-            ["Créances Clients", creancesClients, "Provisions Risques & Charges", provRisques],
-            ["Autres Actifs Circulants", autresActifsCirc, "Dettes Financières (Emprunts)", dettesFinancieres],
-            ["Trésorerie Actif", tresorerieActif, "Dettes Fournisseurs", dettesFournisseurs],
-            ["", "", "Autres Passifs Courants", autresPassifsCourants],
-            ["", "", "Trésorerie Passif", tresoreriePassif],
+            ["Actif Immobilisé Brut", nActifImmob, "Capitaux Propres", nCapitauxPropres],
+            ["Stocks", nStocks, "Amortissements & Provisions", nAmortissements],
+            ["Créances Clients", nCreancesClients, "Provisions Risques & Charges", nProvRisques],
+            ["Autres Actifs Circulants", nAutresActifsCirc, "Dettes Financières (Emprunts)", nDettesFinancieres],
+            ["Trésorerie Actif", nTresorerieActif, "Dettes Fournisseurs", nDettesFournisseurs],
+            ["", "", "Autres Passifs Courants", nAutresPassifsCourants],
+            ["", "", "Trésorerie Passif", nTresoreriePassif],
             [],
             ["TOTAL ACTIF", totalActif, "TOTAL PASSIF", totalPassif],
             [],
             ["Données de Gestion", ""],
-            ["Chiffre d'Affaires", ca],
-            ["Achats (Coût des ventes)", achats],
-            ["Résultat Net", resultatNet],
-            ["Capacité Autofinancement (CAF)", caf]
+            ["Chiffre d'Affaires", nCa],
+            ["Achats (Coût des ventes)", nAchats],
+            ["Résultat Net", nResultatNet],
+            ["Capacité Autofinancement (CAF)", nCaf]
         ];
 
         const wsBilan = XLSX.utils.aoa_to_sheet(bilanData);
@@ -140,29 +155,6 @@ function RatiosContent() {
     const exportPDF = () => {
         window.print();
     };
-
-    const InputRow = ({ label, val, set }: { label: string, val: number, set: (v: number) => void }) => (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed var(--border-light)" }}>
-            <span style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>{label}</span>
-            <input
-                type="number" className="input"
-                style={{ width: "120px", textAlign: "right", padding: "6px" }}
-                value={val === 0 ? "" : val}
-                onChange={(e) => set(Number(e.target.value))}
-                placeholder="0"
-            />
-        </div>
-    );
-
-    const RatioCard = ({ title, value, unit = "" }: { title: string, value: string | number, unit?: string }) => (
-        <div style={{
-            background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "10px",
-            padding: "16px", display: "flex", flexDirection: "column", justifyContent: "space-between"
-        }}>
-            <div style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, marginBottom: "8px" }}>{title}</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>{value} <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-muted)" }}>{unit}</span></div>
-        </div>
-    );
 
     return (
         <div className="animate-fade-in ratios-page">
@@ -221,11 +213,11 @@ function RatiosContent() {
                     <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent-blue)", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "10px" }}>
                         Bilan - Emplois (Actif)
                     </h3>
-                    <InputRow label="Actif Immobilisé Brut" val={actifImmob} set={setActifImmob} />
-                    <InputRow label="Stocks" val={stocks} set={setStocks} />
-                    <InputRow label="Créances Clients" val={creancesClients} set={setCreancesClients} />
-                    <InputRow label="Autres Actifs Circulants" val={autresActifsCirc} set={setAutresActifsCirc} />
-                    <InputRow label="Trésorerie Actif" val={tresorerieActif} set={setTresorerieActif} />
+                    <InputRow label="Actif Immobilisé Brut" val={actifImmob} set={(v) => setActifImmob(v)} />
+                    <InputRow label="Stocks" val={stocks} set={(v) => setStocks(v)} />
+                    <InputRow label="Créances Clients" val={creancesClients} set={(v) => setCreancesClients(v)} />
+                    <InputRow label="Autres Actifs Circulants" val={autresActifsCirc} set={(v) => setAutresActifsCirc(v)} />
+                    <InputRow label="Trésorerie Actif" val={tresorerieActif} set={(v) => setTresorerieActif(v)} />
 
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "16px", paddingTop: "12px", borderTop: "2px solid var(--border)", fontWeight: 700 }}>
                         <span>TOTAL ACTIF</span>
@@ -238,13 +230,13 @@ function RatiosContent() {
                     <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent-purple)", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "10px" }}>
                         Bilan - Ressources (Passif)
                     </h3>
-                    <InputRow label="Capitaux Propres" val={capitauxPropres} set={setCapitauxPropres} />
-                    <InputRow label="Amortissements & Prov." val={amortissements} set={setAmortissements} />
-                    <InputRow label="Provision Risques & Charges" val={provRisques} set={setProvRisques} />
-                    <InputRow label="Emprunts (Dettes Fin.)" val={dettesFinancieres} set={setDettesFinancieres} />
-                    <InputRow label="Dettes Fournisseurs" val={dettesFournisseurs} set={setDettesFournisseurs} />
-                    <InputRow label="Autres Passifs Courants" val={autresPassifsCourants} set={setAutresPassifsCourants} />
-                    <InputRow label="Trésorerie Passif" val={tresoreriePassif} set={setTresoreriePassif} />
+                    <InputRow label="Capitaux Propres" val={capitauxPropres} set={(v) => setCapitauxPropres(v)} />
+                    <InputRow label="Amortissements & Prov." val={amortissements} set={(v) => setAmortissements(v)} />
+                    <InputRow label="Provision Risques & Charges" val={provRisques} set={(v) => setProvRisques(v)} />
+                    <InputRow label="Emprunts (Dettes Fin.)" val={dettesFinancieres} set={(v) => setDettesFinancieres(v)} />
+                    <InputRow label="Dettes Fournisseurs" val={dettesFournisseurs} set={(v) => setDettesFournisseurs(v)} />
+                    <InputRow label="Autres Passifs Courants" val={autresPassifsCourants} set={(v) => setAutresPassifsCourants(v)} />
+                    <InputRow label="Trésorerie Passif" val={tresoreriePassif} set={(v) => setTresoreriePassif(v)} />
 
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "16px", paddingTop: "12px", borderTop: "2px solid var(--border)", fontWeight: 700 }}>
                         <span>TOTAL PASSIF</span>
@@ -262,10 +254,10 @@ function RatiosContent() {
                     <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#10b981", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "10px" }}>
                         Données de Gestion
                     </h3>
-                    <InputRow label="Chiffre d'Affaires (CA)" val={ca} set={setCa} />
-                    <InputRow label="Achats (Coût Ventes/Exploitation)" val={achats} set={setAchats} />
-                    <InputRow label="Résultat Net" val={resultatNet} set={setResultatNet} />
-                    <InputRow label="Capacité d'Autofinancement" val={caf} set={setCaf} />
+                    <InputRow label="Chiffre d'Affaires (CA)" val={ca} set={(v) => setCa(v)} />
+                    <InputRow label="Achats (Coût Ventes/Exploitation)" val={achats} set={(v) => setAchats(v)} />
+                    <InputRow label="Résultat Net" val={resultatNet} set={(v) => setResultatNet(v)} />
+                    <InputRow label="Capacité d'Autofinancement" val={caf} set={(v) => setCaf(v)} />
                 </div>
             </div>
 
@@ -337,3 +329,29 @@ export default function RatiosPage() {
         </Suspense>
     );
 }
+
+const InputRow = ({ label, val, set }: { label: string, val: string | number, set: (v: string) => void }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px dashed var(--border-light)" }}>
+        <span style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>{label}</span>
+        <input
+            type="text" className="input" inputMode="decimal"
+            style={{ width: "120px", textAlign: "right", padding: "6px" }}
+            value={val === 0 ? "" : val}
+            onChange={(e) => {
+                const cleaned = e.target.value.replace(/[^0-9.-]/g, '');
+                set(cleaned);
+            }}
+            placeholder="0"
+        />
+    </div>
+);
+
+const RatioCard = ({ title, value, unit = "" }: { title: string, value: string | number, unit?: string }) => (
+    <div style={{
+        background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "10px",
+        padding: "16px", display: "flex", flexDirection: "column", justifyContent: "space-between"
+    }}>
+        <div style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, marginBottom: "8px" }}>{title}</div>
+        <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>{value} <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-muted)" }}>{unit}</span></div>
+    </div>
+);
