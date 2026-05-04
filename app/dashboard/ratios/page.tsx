@@ -12,25 +12,31 @@ function RatiosContent() {
     const [selectedClient, setSelectedClient] = useState<string>(initialClientId || "");
     const [loading, setLoading] = useState(true);
 
-    // Valeurs du Bilan
-    const [actifImmob, setActifImmob] = useState<string | number>("");
+    // Valeurs du Bilan - Emplois
+    const [immobCorporelles, setImmobCorporelles] = useState<string | number>("");
+    const [immobCorporellesEnCours, setImmobCorporellesEnCours] = useState<string | number>("");
+    const [immobIncorporelles, setImmobIncorporelles] = useState<string | number>("");
+    const [immobFinancieres, setImmobFinancieres] = useState<string | number>("");
+
     const [stocks, setStocks] = useState<string | number>("");
     const [creancesClients, setCreancesClients] = useState<string | number>("");
-    const [autresActifsCirc, setAutresActifsCirc] = useState<string | number>("");
-    const [tresorerieActif, setTresorerieActif] = useState<string | number>("");
-    const [liquidite, setLiquidite] = useState<string | number>("");
-    const [equivalenteLiquidite, setEquivalenteLiquidite] = useState<string | number>("");
+
+    const [autresActifsCourants, setAutresActifsCourants] = useState<string | number>("");
     const [autresActifsFinanciers, setAutresActifsFinanciers] = useState<string | number>("");
 
+    const [liquiditeEquivalents, setLiquiditeEquivalents] = useState<string | number>("");
+
+    // Valeurs du Bilan - Ressources
     const [capitauxPropres, setCapitauxPropres] = useState<string | number>("");
-    const [amortissements, setAmortissements] = useState<string | number>("");
-    const [provRisques, setProvRisques] = useState<string | number>("");
-    const [dettesFinancieres, setDettesFinancieres] = useState<string | number>(""); // Emprunts
+    const [amortissementsProvisions, setAmortissementsProvisions] = useState<string | number>("");
+    const [provisionsRisquesCharges, setProvisionsRisquesCharges] = useState<string | number>("");
+    const [empruntDettesFinancieres, setEmpruntDettesFinancieres] = useState<string | number>("");
+
     const [dettesFournisseurs, setDettesFournisseurs] = useState<string | number>("");
+
     const [autresPassifsCourants, setAutresPassifsCourants] = useState<string | number>("");
-    const [tresoreriePassif, setTresoreriePassif] = useState<string | number>("");
-    const [concoursBancaires, setConcoursBancaires] = useState<string | number>("");
-    const [passifsFinanciers, setPassifsFinanciers] = useState<string | number>("");
+
+    const [concoursBancairesPassifsFinanciers, setConcoursBancairesPassifsFinanciers] = useState<string | number>("");
 
     // Valeurs de Gestion (Compte de Résultat)
     const [ca, setCa] = useState<string | number>("");
@@ -49,56 +55,68 @@ function RatiosContent() {
     };
 
     // Cast as numbers
-    const nActifImmob = Number(actifImmob) || 0;
+    const nImmobCorporelles = Number(immobCorporelles) || 0;
+    const nImmobCorporellesEnCours = Number(immobCorporellesEnCours) || 0;
+    const nImmobIncorporelles = Number(immobIncorporelles) || 0;
+    const nImmobFinancieres = Number(immobFinancieres) || 0;
+
     const nStocks = Number(stocks) || 0;
     const nCreancesClients = Number(creancesClients) || 0;
-    const nAutresActifsCirc = Number(autresActifsCirc) || 0;
-    const nTresorerieActif = Number(tresorerieActif) || 0;
-    const nLiquidite = Number(liquidite) || 0;
-    const nEquivalenteLiquidite = Number(equivalenteLiquidite) || 0;
+
+    const nAutresActifsCourants = Number(autresActifsCourants) || 0;
     const nAutresActifsFinanciers = Number(autresActifsFinanciers) || 0;
 
+    const nLiquiditeEquivalents = Number(liquiditeEquivalents) || 0;
+
     const nCapitauxPropres = Number(capitauxPropres) || 0;
-    const nAmortissements = Number(amortissements) || 0;
-    const nProvRisques = Number(provRisques) || 0;
-    const nDettesFinancieres = Number(dettesFinancieres) || 0;
+    const nAmortissementsProvisions = Number(amortissementsProvisions) || 0;
+    const nProvisionsRisquesCharges = Number(provisionsRisquesCharges) || 0;
+    const nEmpruntDettesFinancieres = Number(empruntDettesFinancieres) || 0;
+
     const nDettesFournisseurs = Number(dettesFournisseurs) || 0;
     const nAutresPassifsCourants = Number(autresPassifsCourants) || 0;
-    const nTresoreriePassif = Number(tresoreriePassif) || 0;
-    const nConcoursBancaires = Number(concoursBancaires) || 0;
-    const nPassifsFinanciers = Number(passifsFinanciers) || 0;
+    const nConcoursBancairesPassifsFinanciers = Number(concoursBancairesPassifsFinanciers) || 0;
 
     const nCa = Number(ca) || 0;
     const nAchats = Number(achats) || 0;
     const nResultatNet = Number(resultatNet) || 0;
     const nCaf = Number(caf) || 0;
 
-    // Calculs intermédiaires
-    const totalActifCourant = nStocks + nCreancesClients + nAutresActifsCirc + nTresorerieActif + nLiquidite + nEquivalenteLiquidite;
-    const totalActif = nActifImmob + nAutresActifsFinanciers + totalActifCourant;
+    // Calculs intermédiaires (Bilan Fonctionnel)
+    const totalEmploisStables = nImmobCorporelles + nImmobCorporellesEnCours + nImmobIncorporelles + nImmobFinancieres;
+    const totalActifCirculantExploitation = nStocks + nCreancesClients;
+    const totalActifCirculantHorsExploitation = nAutresActifsCourants + nAutresActifsFinanciers;
+    const totalTresorerieActif = nLiquiditeEquivalents;
 
-    const totalPassifCourant = nDettesFournisseurs + nAutresPassifsCourants + nTresoreriePassif + nConcoursBancaires;
-    const ressourcesStables = nCapitauxPropres + nAmortissements + nProvRisques + nDettesFinancieres + nPassifsFinanciers;
-    const totalPassif = ressourcesStables + totalPassifCourant;
+    const totalEmplois = totalEmploisStables + totalActifCirculantExploitation + totalActifCirculantHorsExploitation + totalTresorerieActif;
 
-    const totalDettes = nDettesFinancieres + nDettesFournisseurs + nAutresPassifsCourants + nTresoreriePassif + nConcoursBancaires + nPassifsFinanciers;
+    const totalRessourcesStables = nCapitauxPropres + nAmortissementsProvisions + nProvisionsRisquesCharges + nEmpruntDettesFinancieres;
+    const totalPassifCirculantExploitation = nDettesFournisseurs;
+    const totalPassifCirculantHorsExploitation = nAutresPassifsCourants;
+    const totalTresoreriePassif = nConcoursBancairesPassifsFinanciers;
+
+    const totalRessources = totalRessourcesStables + totalPassifCirculantExploitation + totalPassifCirculantHorsExploitation + totalTresoreriePassif;
+
+    const totalActifCourant = totalActifCirculantExploitation + totalActifCirculantHorsExploitation + totalTresorerieActif;
+    const totalPassifCourant = totalPassifCirculantExploitation + totalPassifCirculantHorsExploitation + totalTresoreriePassif;
+    const totalDettes = nEmpruntDettesFinancieres + totalPassifCourant;
 
     // Ratios calculés
     const liquiditeGenerale = totalPassifCourant > 0 ? totalActifCourant / totalPassifCourant : 0;
     const liquiditeReduite = totalPassifCourant > 0 ? (totalActifCourant - nStocks) / totalPassifCourant : 0;
-    const liquiditeImmediate = totalPassifCourant > 0 ? (nTresorerieActif + nLiquidite + nEquivalenteLiquidite) / totalPassifCourant : 0;
+    const liquiditeImmediate = totalPassifCourant > 0 ? totalTresorerieActif / totalPassifCourant : 0;
 
-    const endettement = totalActif > 0 ? totalDettes / totalActif : 0;
-    const autonomieFinanciere = totalActif > 0 ? nCapitauxPropres / totalActif : 0;
+    const endettement = totalEmplois > 0 ? totalDettes / totalEmplois : 0;
+    const autonomieFinanciere = totalEmplois > 0 ? nCapitauxPropres / totalEmplois : 0;
     const leverageFinancier = nCapitauxPropres > 0 ? totalDettes / nCapitauxPropres : 0;
-    const capaciteRemboursement = nCaf > 0 ? nDettesFinancieres / nCaf : 0;
+    const capaciteRemboursement = nCaf > 0 ? nEmpruntDettesFinancieres / nCaf : 0;
 
-    const roa = totalActif > 0 ? nResultatNet / totalActif : 0;
+    const roa = totalEmplois > 0 ? nResultatNet / totalEmplois : 0;
     const roe = nCapitauxPropres > 0 ? nResultatNet / nCapitauxPropres : 0;
     const margeNette = nCa > 0 ? nResultatNet / nCa : 0;
 
-    const fondsDeRoulement = ressourcesStables - nActifImmob;
-    const besoinFondsDeRoulement = (nStocks + nCreancesClients + nAutresActifsCirc) - (nDettesFournisseurs + nAutresPassifsCourants);
+    const fondsDeRoulement = totalRessourcesStables - totalEmploisStables;
+    const besoinFondsDeRoulement = (totalActifCirculantExploitation + totalActifCirculantHorsExploitation) - (totalPassifCirculantExploitation + totalPassifCirculantHorsExploitation);
     const tresorerieNette = fondsDeRoulement - besoinFondsDeRoulement;
 
     // Ratios de Gestion
@@ -110,18 +128,25 @@ function RatiosContent() {
         const wb = XLSX.utils.book_new();
 
         const bilanData = [
-            ["Poste Actif", "Montant", "Poste Passif", "Montant"],
-            ["Actif Immobilisé Brut", nActifImmob, "Capitaux Propres", nCapitauxPropres],
-            ["Autres Actifs Financiers", nAutresActifsFinanciers, "Passifs Financiers", nPassifsFinanciers],
-            ["Stocks", nStocks, "Amortissements & Provisions", nAmortissements],
-            ["Créances Clients", nCreancesClients, "Provisions Risques & Charges", nProvRisques],
-            ["Autres Actifs Circulants", nAutresActifsCirc, "Dettes Financières (Emprunts)", nDettesFinancieres],
-            ["Trésorerie Actif", nTresorerieActif, "Concours Bancaires", nConcoursBancaires],
-            ["Liquidité", nLiquidite, "Dettes Fournisseurs", nDettesFournisseurs],
-            ["Equivalente de Liquidité", nEquivalenteLiquidite, "Autres Passifs Courants", nAutresPassifsCourants],
-            ["", "", "Trésorerie Passif", nTresoreriePassif],
+            ["Emplois (Actif)", "Montant", "Ressources (Passif)", "Montant"],
+            ["Emplois Stables", totalEmploisStables, "Ressources Stables", totalRessourcesStables],
+            ["- Immobilisations corporelles", nImmobCorporelles, "- Capitaux propres", nCapitauxPropres],
+            ["- Immobilisations corporelles en cours", nImmobCorporellesEnCours, "- Amortissements et provisions", nAmortissementsProvisions],
+            ["- Immobilisations incorporelles", nImmobIncorporelles, "- Provisions pour risques et charges", nProvisionsRisquesCharges],
+            ["- Immobilisations financières", nImmobFinancieres, "- Emprunt (dette financière)", nEmpruntDettesFinancieres],
             [],
-            ["TOTAL ACTIF", totalActif, "TOTAL PASSIF", totalPassif],
+            ["Actif Circulant d'Exploitation", totalActifCirculantExploitation, "Passif Circulant d'Exploitation", totalPassifCirculantExploitation],
+            ["- Stocks", nStocks, "- Dettes fournisseurs", nDettesFournisseurs],
+            ["- Créances clients", nCreancesClients, "", ""],
+            [],
+            ["Actif Circulant Hors Exploitation", totalActifCirculantHorsExploitation, "Passif Circulant Hors Exploitation", totalPassifCirculantHorsExploitation],
+            ["- Autres actifs courants", nAutresActifsCourants, "- Autres passifs courants", nAutresPassifsCourants],
+            ["- Autres actifs financiers", nAutresActifsFinanciers, "", ""],
+            [],
+            ["Trésorerie Actif", totalTresorerieActif, "Trésorerie Passif", totalTresoreriePassif],
+            ["- Liquidité et équivalents", nLiquiditeEquivalents, "- Concours bancaire et passifs financiers", nConcoursBancairesPassifsFinanciers],
+            [],
+            ["TOTAL EMPLOIS", totalEmplois, "TOTAL RESSOURCES", totalRessources],
             [],
             ["Données de Gestion", ""],
             ["Chiffre d'Affaires", nCa],
@@ -223,46 +248,77 @@ function RatiosContent() {
                 {/* Actif */}
                 <div className="card" style={{ padding: "20px" }}>
                     <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent-blue)", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "10px" }}>
-                        Bilan - Emplois (Actif)
+                        Emplois (Actif)
                     </h3>
-                    <InputRow label="Actif Immobilisé Brut" val={actifImmob} set={(v) => setActifImmob(v)} />
-                    <InputRow label="Autres Actifs Financiers" val={autresActifsFinanciers} set={(v) => setAutresActifsFinanciers(v)} />
-                    <InputRow label="Stocks" val={stocks} set={(v) => setStocks(v)} />
-                    <InputRow label="Créances Clients" val={creancesClients} set={(v) => setCreancesClients(v)} />
-                    <InputRow label="Autres Actifs Circulants" val={autresActifsCirc} set={(v) => setAutresActifsCirc(v)} />
-                    <InputRow label="Trésorerie Actif" val={tresorerieActif} set={(v) => setTresorerieActif(v)} />
-                    <InputRow label="Liquidité" val={liquidite} set={(v) => setLiquidite(v)} />
-                    <InputRow label="Equivalente de Liquidité" val={equivalenteLiquidite} set={(v) => setEquivalenteLiquidite(v)} />
+                    
+                    <div style={{ marginBottom: "16px", background: "rgba(59, 130, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Emplois stables : {totalEmploisStables.toLocaleString()} TND</div>
+                        <InputRow label="Immobilisations corporelles" val={immobCorporelles} set={(v) => setImmobCorporelles(v)} />
+                        <InputRow label="Immobilisations corporelles en cours" val={immobCorporellesEnCours} set={(v) => setImmobCorporellesEnCours(v)} />
+                        <InputRow label="Immobilisations incorporelles" val={immobIncorporelles} set={(v) => setImmobIncorporelles(v)} />
+                        <InputRow label="Immobilisations financières" val={immobFinancieres} set={(v) => setImmobFinancieres(v)} />
+                    </div>
+
+                    <div style={{ marginBottom: "16px", background: "rgba(59, 130, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Actif circulant d'exploitation : {totalActifCirculantExploitation.toLocaleString()} TND</div>
+                        <InputRow label="Stocks" val={stocks} set={(v) => setStocks(v)} />
+                        <InputRow label="Créances clients" val={creancesClients} set={(v) => setCreancesClients(v)} />
+                    </div>
+
+                    <div style={{ marginBottom: "16px", background: "rgba(59, 130, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Actif circulant hors d'exploitation : {totalActifCirculantHorsExploitation.toLocaleString()} TND</div>
+                        <InputRow label="Autres actifs courants" val={autresActifsCourants} set={(v) => setAutresActifsCourants(v)} />
+                        <InputRow label="Autres actifs financiers" val={autresActifsFinanciers} set={(v) => setAutresActifsFinanciers(v)} />
+                    </div>
+
+                    <div style={{ marginBottom: "16px", background: "rgba(59, 130, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Trésorerie actif : {totalTresorerieActif.toLocaleString()} TND</div>
+                        <InputRow label="Liquidité et équivalents" val={liquiditeEquivalents} set={(v) => setLiquiditeEquivalents(v)} />
+                    </div>
 
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "16px", paddingTop: "12px", borderTop: "2px solid var(--border)", fontWeight: 700 }}>
-                        <span>TOTAL ACTIF</span>
-                        <span style={{ color: "var(--text-primary)" }}>{totalActif.toLocaleString()} TND</span>
+                        <span>TOTAL EMPLOIS</span>
+                        <span style={{ color: "var(--text-primary)" }}>{totalEmplois.toLocaleString()} TND</span>
                     </div>
                 </div>
 
                 {/* Passif */}
                 <div className="card" style={{ padding: "20px" }}>
                     <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent-purple)", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "10px" }}>
-                        Bilan - Ressources (Passif)
+                        Ressources (Passif)
                     </h3>
-                    <InputRow label="Capitaux Propres" val={capitauxPropres} set={(v) => setCapitauxPropres(v)} />
-                    <InputRow label="Amortissements & Prov." val={amortissements} set={(v) => setAmortissements(v)} />
-                    <InputRow label="Provision Risques & Charges" val={provRisques} set={(v) => setProvRisques(v)} />
-                    <InputRow label="Emprunts (Dettes Fin.)" val={dettesFinancieres} set={(v) => setDettesFinancieres(v)} />
-                    <InputRow label="Passifs Financiers" val={passifsFinanciers} set={(v) => setPassifsFinanciers(v)} />
-                    <InputRow label="Dettes Fournisseurs" val={dettesFournisseurs} set={(v) => setDettesFournisseurs(v)} />
-                    <InputRow label="Concours Bancaires" val={concoursBancaires} set={(v) => setConcoursBancaires(v)} />
-                    <InputRow label="Autres Passifs Courants" val={autresPassifsCourants} set={(v) => setAutresPassifsCourants(v)} />
-                    <InputRow label="Trésorerie Passif" val={tresoreriePassif} set={(v) => setTresoreriePassif(v)} />
+                    
+                    <div style={{ marginBottom: "16px", background: "rgba(139, 92, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Ressources stables : {totalRessourcesStables.toLocaleString()} TND</div>
+                        <InputRow label="Capitaux propres" val={capitauxPropres} set={(v) => setCapitauxPropres(v)} />
+                        <InputRow label="Amortissements et provisions" val={amortissementsProvisions} set={(v) => setAmortissementsProvisions(v)} />
+                        <InputRow label="Provisions pour risques et charges" val={provisionsRisquesCharges} set={(v) => setProvisionsRisquesCharges(v)} />
+                        <InputRow label="Emprunt (dette financière)" val={empruntDettesFinancieres} set={(v) => setEmpruntDettesFinancieres(v)} />
+                    </div>
+
+                    <div style={{ marginBottom: "16px", background: "rgba(139, 92, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Passif circulant d'exploitation : {totalPassifCirculantExploitation.toLocaleString()} TND</div>
+                        <InputRow label="Dettes fournisseurs" val={dettesFournisseurs} set={(v) => setDettesFournisseurs(v)} />
+                    </div>
+
+                    <div style={{ marginBottom: "16px", background: "rgba(139, 92, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Passif circulant hors d'exploitation : {totalPassifCirculantHorsExploitation.toLocaleString()} TND</div>
+                        <InputRow label="Autres passifs courants" val={autresPassifsCourants} set={(v) => setAutresPassifsCourants(v)} />
+                    </div>
+
+                    <div style={{ marginBottom: "16px", background: "rgba(139, 92, 246, 0.05)", padding: "10px", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", color: "var(--text-primary)" }}>Trésorerie passif : {totalTresoreriePassif.toLocaleString()} TND</div>
+                        <InputRow label="Concours bancaire et passifs fin." val={concoursBancairesPassifsFinanciers} set={(v) => setConcoursBancairesPassifsFinanciers(v)} />
+                    </div>
 
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "16px", paddingTop: "12px", borderTop: "2px solid var(--border)", fontWeight: 700 }}>
-                        <span>TOTAL PASSIF</span>
-                        <span style={{ color: totalPassif === totalActif ? "#10b981" : "#ef4444" }}>
-                            {totalPassif.toLocaleString()} TND
+                        <span>TOTAL RESSOURCES</span>
+                        <span style={{ color: totalRessources === totalEmplois ? "#10b981" : "#ef4444" }}>
+                            {totalRessources.toLocaleString()} TND
                         </span>
                     </div>
-                    {totalPassif !== totalActif && totalActif > 0 && totalPassif > 0 && (
-                        <div style={{ fontSize: "11px", color: "#ef4444", textAlign: "right", marginTop: "4px" }}>Déséquilibre: {Math.abs(totalActif - totalPassif).toLocaleString()} TND</div>
+                    {totalRessources !== totalEmplois && totalEmplois > 0 && totalRessources > 0 && (
+                        <div style={{ fontSize: "11px", color: "#ef4444", textAlign: "right", marginTop: "4px" }}>Déséquilibre: {Math.abs(totalEmplois - totalRessources).toLocaleString()} TND</div>
                     )}
                 </div>
 
