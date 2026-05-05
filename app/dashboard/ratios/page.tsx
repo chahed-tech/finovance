@@ -54,6 +54,72 @@ function RatiosContent() {
         setLoading(false);
     };
 
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (selectedClient) {
+            fetchBilanData(selectedClient);
+        } else {
+            resetFields();
+        }
+    }, [selectedClient]);
+
+    const fetchBilanData = async (clientId: string) => {
+        const { data, error } = await supabase
+            .from("bilans")
+            .select("*")
+            .eq("client_id", clientId)
+            .single();
+
+        if (data) {
+            setImmobCorporelles(data.immob_corporelles || "");
+            setImmobCorporellesEnCours(data.immob_corporelles_en_cours || "");
+            setImmobIncorporelles(data.immob_incorporelles || "");
+            setImmobFinancieres(data.immob_financieres || "");
+            setStocks(data.stocks || "");
+            setCreancesClients(data.creances_clients || "");
+            setAutresActifsCourants(data.autres_actifs_courants || "");
+            setAutresActifsFinanciers(data.autres_actifs_financiers || "");
+            setLiquiditeEquivalents(data.liquidite_equivalents || "");
+            setCapitauxPropres(data.capitaux_propres || "");
+            setAmortissementsProvisions(data.amortissements_provisions || "");
+            setProvisionsRisquesCharges(data.provisions_risques_charges || "");
+            setEmpruntDettesFinancieres(data.emprunt_dettes_financieres || "");
+            setDettesFournisseurs(data.dettes_fournisseurs || "");
+            setAutresPassifsCourants(data.autres_passifs_courants || "");
+            setConcoursBancairesPassifsFinanciers(data.concours_bancaires_passifs_fin || "");
+            setCa(data.ca || "");
+            setAchats(data.achats || "");
+            setResultatNet(data.resultat_net || "");
+            setCaf(data.caf || "");
+        } else {
+            resetFields();
+        }
+    };
+
+    const resetFields = () => {
+        setImmobCorporelles("");
+        setImmobCorporellesEnCours("");
+        setImmobIncorporelles("");
+        setImmobFinancieres("");
+        setStocks("");
+        setCreancesClients("");
+        setAutresActifsCourants("");
+        setAutresActifsFinanciers("");
+        setLiquiditeEquivalents("");
+        setCapitauxPropres("");
+        setAmortissementsProvisions("");
+        setProvisionsRisquesCharges("");
+        setEmpruntDettesFinancieres("");
+        setDettesFournisseurs("");
+        setAutresPassifsCourants("");
+        setConcoursBancairesPassifsFinanciers("");
+        setCa("");
+        setAchats("");
+        setResultatNet("");
+        setCaf("");
+    };
+
     // Cast as numbers
     const nImmobCorporelles = Number(immobCorporelles) || 0;
     const nImmobCorporellesEnCours = Number(immobCorporellesEnCours) || 0;
@@ -189,6 +255,50 @@ function RatiosContent() {
         XLSX.writeFile(wb, `Analyse_${clientName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     };
 
+    const saveBilanData = async () => {
+        if (!selectedClient) {
+            alert("Veuillez sélectionner un client d'abord !");
+            return;
+        }
+        setSaving(true);
+        const payload = {
+            client_id: selectedClient,
+            immob_corporelles: nImmobCorporelles,
+            immob_corporelles_en_cours: nImmobCorporellesEnCours,
+            immob_incorporelles: nImmobIncorporelles,
+            immob_financieres: nImmobFinancieres,
+            stocks: nStocks,
+            creances_clients: nCreancesClients,
+            autres_actifs_courants: nAutresActifsCourants,
+            autres_actifs_financiers: nAutresActifsFinanciers,
+            liquidite_equivalents: nLiquiditeEquivalents,
+            capitaux_propres: nCapitauxPropres,
+            amortissements_provisions: nAmortissementsProvisions,
+            provisions_risques_charges: nProvisionsRisquesCharges,
+            emprunt_dettes_financieres: nEmpruntDettesFinancieres,
+            dettes_fournisseurs: nDettesFournisseurs,
+            autres_passifs_courants: nAutresPassifsCourants,
+            concours_bancaires_passifs_fin: nConcoursBancairesPassifsFinanciers,
+            ca: nCa,
+            achats: nAchats,
+            resultat_net: nResultatNet,
+            caf: nCaf,
+            updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+            .from("bilans")
+            .upsert(payload, { onConflict: "client_id" });
+
+        if (error) {
+            console.error(error);
+            alert("Erreur lors de la sauvegarde.");
+        } else {
+            alert("Bilan sauvegardé avec succès !");
+        }
+        setSaving(false);
+    };
+
     const exportPDF = () => {
         window.print();
     };
@@ -212,6 +322,13 @@ function RatiosContent() {
                 </div>
 
                 <div className="no-print" style={{ display: "flex", gap: "10px" }}>
+                    <button onClick={saveBilanData} disabled={saving} style={{
+                        padding: "10px 18px", borderRadius: "10px", border: "1px solid rgba(59,130,246,0.4)",
+                        background: "rgba(59,130,246,0.1)", color: "#3b82f6",
+                        fontWeight: 600, fontSize: "13px", cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "6px"
+                    }}>
+                        {saving ? "⏳ Enregistrement..." : "💾 Sauvegarder"}
+                    </button>
                     <button onClick={exportPDF} style={{
                         padding: "10px 18px", borderRadius: "10px", border: "1px solid var(--border)",
                         background: "var(--bg-card)", color: "var(--text-secondary)",
